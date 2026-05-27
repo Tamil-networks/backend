@@ -5,7 +5,6 @@ import dotenv from "dotenv";
 
 import authRoutes from "./routes/authRoutes.js";
 import locationRoutes from "./routes/locationRoutes.js";
-import ValidLocation from "./models/ValidLocation.js";
 import userRoutes from "./routes/userRoutes.js";
 
 dotenv.config();
@@ -32,22 +31,20 @@ app.get("/", (req, res) => {
   res.send("✅ API Running Successfully");
 });
 
-setInterval(async () => {
-  const hour = new Date().getHours();
-
-  if (hour >= 9) {
-    console.log("🧹 Clearing all location data...");
-    await ValidLocation.deleteMany({});
-  }
-}, 5 * 60 * 1000); // every 5 mins
-
 // =======================================
 // 🛢️ DATABASE CONNECTION
 // =======================================
 mongoose
-  .connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/bus_tracking")
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch((err) => console.log("❌ DB Error:", err));
+  .connect(
+    process.env.MONGO_URI ||
+    "mongodb://127.0.0.1:27017/bus_tracking"
+  )
+  .then(() => {
+    console.log("✅ MongoDB Connected");
+  })
+  .catch((err) => {
+    console.log("❌ DB Error:", err);
+  });
 
 // =======================================
 // 🚀 SERVER START

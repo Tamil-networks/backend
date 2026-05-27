@@ -4,33 +4,52 @@ import { dindigul_buses } from "../config/busRoutes.js";
 import { getDistance } from "../utils/distance.js";
 
 // =====================================
-// 🚀 SAVE LOCATION (SESSION-BASED)
+// 🚀 SAVE LOCATION
 // =====================================
 export const saveLocation = async (req, res) => {
   try {
+
     console.log("📥 BACKEND RECEIVED:", req.body);
 
     const { userId, latitude, longitude } = req.body;
+
     const hour = new Date().getHours();
 
     // =====================================
-    // ⏰ TIME CHECK (7 AM → 9 AM)
+    // ⏰ SAVE ONLY 7AM → 9AM
     // =====================================
     const isWithinTime = hour >= 7 && hour < 9;
 
     if (!isWithinTime) {
+
       console.log("⛔ Outside time → NOT SAVING");
-      return res.json({ message: "Outside time window - ignored" });
+
+      return res.json({
+        message: "Outside time window - ignored",
+      });
     }
 
+    // =====================================
+    // 👤 FIND USER
+    // =====================================
     const user = await User.findById(userId);
+
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        message: "User not found",
+      });
     }
 
-    const busData = dindigul_buses[Number(user.busNumber)];
+    // =====================================
+    // 🚌 GET BUS DATA
+    // =====================================
+    const busData =
+      dindigul_buses[Number(user.busNumber)];
+
     if (!busData) {
-      return res.status(400).json({ message: "Invalid bus number" });
+      return res.status(400).json({
+        message: "Invalid bus number",
+      });
     }
 
     const stops = busData.stops;
@@ -39,16 +58,17 @@ export const saveLocation = async (req, res) => {
     console.log("🚌 BUS DATA:", busData);
 
     // =====================================
-    // 📏 FIXED RADIUS = 200 METERS
+    // 📏 FIXED RADIUS = 200M
     // =====================================
     const RADIUS = 200;
 
     // =====================================
-    // ✅ STEP 1 — STOPS
+    // ✅ CHECK STOPS
     // =====================================
     let isInsideStop = false;
 
     for (let stop of stops) {
+
       const distance = getDistance(
         latitude,
         longitude,
@@ -56,7 +76,10 @@ export const saveLocation = async (req, res) => {
         stop.lng
       );
 
-      console.log(`📏 Stop ${stop.name}:`, distance);
+      console.log(
+        `📏 Stop ${stop.name}:`,
+        distance
+      );
 
       if (distance <= RADIUS) {
         isInsideStop = true;
@@ -65,11 +88,12 @@ export const saveLocation = async (req, res) => {
     }
 
     // =====================================
-    // ✅ STEP 2 — CHECKPOINTS
+    // ✅ CHECK CHECKPOINTS
     // =====================================
     let isInsideCheckpoint = false;
 
     for (let point of checkpoints) {
+
       const distance = getDistance(
         latitude,
         longitude,
@@ -77,7 +101,10 @@ export const saveLocation = async (req, res) => {
         point.lng
       );
 
-      console.log(`📏 Checkpoint ${point.name}:`, distance);
+      console.log(
+        `📏 Checkpoint ${point.name}:`,
+        distance
+      );
 
       if (distance <= RADIUS) {
         isInsideCheckpoint = true;
@@ -86,12 +113,22 @@ export const saveLocation = async (req, res) => {
     }
 
     // =====================================
-    // 🎯 FINAL DECISION
+    // 🎯 VALID LOCATION
     // =====================================
-
     if (isInsideStop || isInsideCheckpoint) {
+
       console.log("🎯 VALID LOCATION");
 
+      // =====================================
+      // 🧹 REMOVE OLD USER LOCATION
+      // =====================================
+      await ValidLocation.deleteMany({
+        userId,
+      });
+
+      // =====================================
+      // 💾 SAVE NEW LOCATION
+      // =====================================
       const data = await ValidLocation.create({
         userId,
         latitude,
@@ -100,37 +137,64 @@ export const saveLocation = async (req, res) => {
         college: user.college,
       });
 
-      return res.json({ message: "Valid", data });
+      return res.json({
+        message: "Valid",
+        data,
+      });
     }
 
-    // ❌ DO NOT STORE INVALID
-    console.log("❌ Not in valid zone → NOT SAVING");
+    // =====================================
+    // ❌ INVALID LOCATION
+    // =====================================
+    console.log(
+      "❌ Not in valid zone → NOT SAVING"
+    );
 
-    return res.json({ message: "Ignored (outside zone)" });
+    return res.json({
+      message: "Ignored (outside zone)",
+    });
 
   } catch (error) {
+
     console.log("❌ ERROR:", error);
-    res.status(500).json({ message: "Error saving location" });
+
+    res.status(500).json({
+      message: "Error saving location",
+    });
   }
 };
 
-
-
 // =====================================
-// 🗺️ GET VALID USERS (ONLY 7–9 AM)
+// 🗺️ GET VALID USERS
 // =====================================
 export const getValidUsers = async (req, res) => {
+
   try {
+
     const hour = new Date().getHours();
 
-    // ❌ Outside time → return EMPTY
-    if (hour < 7 || hour >= 9) {
-      console.log("⛔ Outside time → return empty map");
+    // =====================================
+    // ⛔ AFTER 10AM RETURN EMPTY
+    // =====================================
+    if (hour >= 10) {
+
+      console.log(
+        "⛔ After 10AM → return empty map"
+      );
+
       return res.json([]);
     }
 
-    const user = await User.findById(req.user.id);
+    // =====================================
+    // 👤 CURRENT USER
+    // =====================================
+    const user = await User.findById(
+      req.user.id
+    );
 
+    // =====================================
+    // 📍 GET SAME BUS USERS
+    // =====================================
     const users = await ValidLocation.find({
       busNumber: Number(user.busNumber),
       college: user.college,
@@ -141,7 +205,14 @@ export const getValidUsers = async (req, res) => {
     res.json(users);
 
   } catch (err) {
-    console.log("❌ GET VALID USERS ERROR:", err);
-    res.status(500).json({ message: "Error" });
+
+    console.log(
+      "❌ GET VALID USERS ERROR:",
+      err
+    );
+
+    res.status(500).json({
+      message: "Error",
+    });
   }
 };
