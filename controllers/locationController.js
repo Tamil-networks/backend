@@ -13,9 +13,14 @@ export const saveLocation = async (req, res) => {
 
     const { userId, latitude, longitude } = req.body;
 
-    const hour = new Date().getHours();
-    console.log("Server Time:", now);
-    console.log("Hour:", now.getHours());
+    const indiaTime = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata",
+    });
+
+    const hour = new Date(indiaTime).getHours();
+
+    console.log("🇮🇳 India Hour:", hour);
+    
     // =====================================
     // ⏰ SAVE ONLY 7AM → 9AM
     // =====================================
@@ -172,12 +177,18 @@ export const getValidUsers = async (req, res) => {
 
   try {
 
-    const hour = new Date().getHours();
+    const indiaTime = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata",
+    });
+
+    const hour = new Date(indiaTime).getHours();
+
+    console.log("🇮🇳 India Hour:", hour);
 
     // =====================================
     // ⛔ AFTER 10AM RETURN EMPTY
     // =====================================
-    if (hour >= 10) {
+    if (hour < 7 || hour >= 9) {
 
       console.log(
         "⛔ After 10AM → return empty map"
