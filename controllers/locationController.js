@@ -14,7 +14,8 @@ export const saveLocation = async (req, res) => {
     const { userId, latitude, longitude } = req.body;
 
     const hour = new Date().getHours();
-
+    console.log("Server Time:", now);
+    console.log("Hour:", now.getHours());
     // =====================================
     // ⏰ SAVE ONLY 7AM → 9AM
     // =====================================
