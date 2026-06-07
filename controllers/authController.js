@@ -36,6 +36,7 @@ export const registerUser = async (req, res) => {
       busNumber,
       boardingPoint,
       arrivalTime,
+      role,
     } = req.body;
 
     // ==============================
@@ -46,12 +47,20 @@ export const registerUser = async (req, res) => {
       !email ||
       !password ||
       !college ||
-      !busNumber ||
-      !boardingPoint ||
-      !arrivalTime
+      !busNumber
     ) {
       return res.status(400).json({
         message: "Please fill all fields",
+      });
+    }
+
+    if (
+     role !== "driver" &&
+     (!boardingPoint || !arrivalTime)
+    ) {
+      return res.status(400).json({
+        message:
+         "Boarding Point and Arrival Time are required",
       });
     }
 
@@ -88,8 +97,15 @@ export const registerUser = async (req, res) => {
       password: hashedPassword,
       college,
       busNumber,
-      boardingPoint,
-      arrivalTime,
+      boardingPoint:
+        role === "driver"
+          ? ""
+          : boardingPoint,
+      arrivalTime:
+        role === "driver"
+          ? ""
+          : arrivalTime,
+      role: role || "student",
     });
 
     console.log("✅ USER REGISTERED");
@@ -111,6 +127,7 @@ export const registerUser = async (req, res) => {
         busNumber: user.busNumber,
         boardingPoint: user.boardingPoint,
         arrivalTime: user.arrivalTime,
+        role: user.role,
       },
     });
 
@@ -188,6 +205,7 @@ export const loginUser = async (req, res) => {
         busNumber: user.busNumber,
         boardingPoint: user.boardingPoint,
         arrivalTime: user.arrivalTime,
+        role: user.role,
       },
     });
 

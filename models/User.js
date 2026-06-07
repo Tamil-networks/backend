@@ -7,7 +7,12 @@ const userSchema = new mongoose.Schema({
   college: String,
   busNumber: String,
   boardingPoint: String,
-  arrivalTime: String
+  arrivalTime: String,
+  role: {
+    type: String,
+    enum: ["student", "driver"],
+    default: "student",
+  },
 });
 
 export default mongoose.model("User", userSchema);
