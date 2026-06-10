@@ -218,3 +218,50 @@ export const loginUser = async (req, res) => {
     });
   }
 };
+// ======================================
+// RESET PASSWORD
+// ======================================
+export const resetPassword = async (req, res) => {
+
+  try {
+
+    const { email, newPassword } = req.body;
+
+    if (!email || !newPassword) {
+      return res.status(400).json({
+        message: "Email and New Password required",
+      });
+    }
+
+    const user = await User.findOne({
+      email,
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+
+    user.password = await bcrypt.hash(
+      newPassword,
+      salt
+    );
+
+    await user.save();
+
+    res.json({
+      message: "Password Updated Successfully",
+    });
+
+  } catch (error) {
+
+    console.log(error);
+
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
